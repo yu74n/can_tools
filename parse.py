@@ -2,6 +2,13 @@
 # -*- coding: utf-8 -*-
 
 PARSER_STATUS = {"INIT": -1 , "SINGLE": 0, "FIRST": 1, "CONSECUTIVE": 2, "FLOW": 3, "DONE": 99}
+OFFSET_TYPE = 3
+OFFSET_SINGLE_SIZE = 3
+OFFSET_SINGLE_PAYLOAD = 4
+OFFSET_FIRST_SIZE = 4
+OFFSET_FIRST_PAYLOAD = 5
+OFFSET_CONSECUTIVE_SEQ = 3
+OFFSET_CONSECUTIVE_PAYLOAD = 4
 
 class SinglePayload():
     def __init__(self):
@@ -9,10 +16,10 @@ class SinglePayload():
         self._payload = []
 
     def extract_size(self, frame):
-        self._size = int(frame[0][1], 16) 
+        self._size = int(frame[OFFSET_SINGLE_SIZE][1], 16) 
 
     def extract_payload(self, frame):
-        self._payload.extend(frame[1:1+self._size])
+        self._payload.extend(frame[OFFSET_SINGLE_PAYLOAD:OFFSET_SINGLE_PAYLOAD+self._size])
 
     def get_size(self):
         return self._size
@@ -29,7 +36,7 @@ class SegmentedPayload():
         self.is_done = False
 
     def extract_size(self, frame):
-        self._size = int(frame[0][1], 16) + int(frame[1], 16)
+        self._size = int(frame[OFFSET_SINGLE_SIZE][1], 16) + int(frame[OFFSET_FIRST_SIZE], 16)
 
     def extract_first_payload(self, frame):
         s = 0
@@ -39,7 +46,7 @@ class SegmentedPayload():
             s = self._size
             self.is_done = True
 
-        self._payload.extend(frame[2:2+s])
+        self._payload.extend(frame[OFFSET_FIRST_PAYLOAD:OFFSET_FIRST_PAYLOAD+s])
         self._position += s
 
     def extract_consective_payload(self, frame):
@@ -50,7 +57,7 @@ class SegmentedPayload():
             s = self._size - self._position
             self.is_done = True
 
-        self._segment[int(frame[0][1], 16)] = frame[1:1+s]
+        self._segment[int(frame[OFFSET_CONSECUTIVE_SEQ][1], 16)] = frame[OFFSET_CONSECUTIVE_PAYLOAD:OFFSET_CONSECUTIVE_PAYLOAD+s]
         self._position += s
 
     def get_size(self):
@@ -73,13 +80,7 @@ class Parser():
         self._result = []
 
     def get_frame_type(self, frame):
-        return int(frame[0][0])
-
-    def set_uds_size(self, frame):
-        self._size = int(frame[0][1], 16)
-
-    def set_payload(self, frame):
-        self._payload.extend(frame[1:1+self._size])
+        return int(frame[OFFSET_TYPE][0])
 
     def get_result(self):
         return self._result
@@ -141,5 +142,5 @@ def find_seed_and_key(parsed):
 i = list(get_input()) 
 parser = Parser(i)
 parser.parse()
-#print parser.get_result()
-print find_seed_and_key(parser.get_result())
+print parser.get_result()
+#print find_seed_and_key(parser.get_result())
