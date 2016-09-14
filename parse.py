@@ -195,8 +195,44 @@ def find_seed_and_key(parsed):
             result.append(r)
     return result
 
+class Analyzer():
+    def __init__(self):
+        self._req = []
+        self._res = []
+        self._result = []
+
+    def get_result(self):
+        return self._result
+
+    def match_request_and_response(self, parsed):
+        for p in parsed:
+            sid = p["sid"]
+            req_sid = int(sid, 16) - 0x40
+            i = self.find_req(req_sid)
+            if i != None:
+                req = self._req.pop(i)
+                self._result.append({"req": req, "res": p})
+            else:
+                self._req.append(p)
+
+    def find_req(self, sid):
+        for i, r in enumerate(self._req):
+            if int(r["sid"], 16) == sid:
+                return i
+        return None
+
+def readable(result):
+    for r in result:
+        print "req: " + r["req"]["id"] + " " + r["req"]["sid"] + " " + r["req"]["subfunc"] + " " + ' '.join(r["req"]["payload"])
+        print "res: " + r["res"]["id"] + " " + r["res"]["sid"] + " " + r["res"]["subfunc"] + " " + ' '.join(r["res"]["payload"])
+
+
 i = list(get_input()) 
 parser = Parser(i)
 parser.parse()
-print parser.get_result()
+parsed = parser.get_result()
+analyzer = Analyzer()
+analyzer.match_request_and_response(parsed)
+result =  analyzer.get_result()
+readable(result)
 #print find_seed_and_key(parser.get_result())
