@@ -18,6 +18,8 @@ OFFSET_FIRST_PAYLOAD = 7
 OFFSET_CONSECUTIVE_SEQ = 3
 OFFSET_CONSECUTIVE_PAYLOAD = 4
 
+XOR_FIXED_VALUES = [0xDEDE5454]
+
 class SinglePayload():
     def __init__(self):
         self._id = ""
@@ -226,6 +228,17 @@ def readable(result):
         print "req: " + r["req"]["id"] + " " + r["req"]["sid"] + " " + r["req"]["subfunc"] + " " + ' '.join(r["req"]["payload"])
         print "res: " + r["res"]["id"] + " " + r["res"]["sid"] + " " + r["res"]["subfunc"] + " " + ' '.join(r["res"]["payload"])
 
+def fuzz(orig, expect):
+    for a in XOR_FIXED_VALUES:
+        if int("".join(orig), 16) ^ a == int("".join(expect), 16):
+            return hex(a)
+    for b in range(1, 63):
+        if (int("".join(orig), 16) << b) % (2 ** 16) == int("".join(expect), 16):
+            return str(b)
+    for c in range(2000, 3000):
+        for d in range(300, 400):
+            if (c * int("".join(orig), 16) + d) % (2 ** 16) == int("".join(expect), 16):
+                return str(c) + " " + str(d)
 
 i = list(get_input()) 
 parser = Parser(i)
@@ -235,4 +248,7 @@ analyzer = Analyzer()
 analyzer.match_request_and_response(parsed)
 result =  analyzer.get_result()
 readable(result)
-#print find_seed_and_key(parser.get_result())
+r = find_seed_and_key(parsed)
+key = fuzz(r[0]["seed"], r[0]["key"])
+if key != None:
+    print key
