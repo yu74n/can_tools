@@ -180,14 +180,14 @@ def find_seed_and_key(parsed):
     result = []
     for p in parsed:
         size = p["size"]
-        sid = p["payload"][0]
-        sub = p["payload"][1]
+        sid = p["sid"]
+        sub = p["subfunc"]
         if sid == "27":
             if sub == "02":
-                key = p["payload"][2:2+size-2]
+                key = p["payload"][0:size-2]
         if sid == "67":
             if sub == "01":
-                seed = p["payload"][2:2+size-2]
+                seed = p["payload"][0:size-2]
         if sid == "67" and sub == "02":
             r = {}
             r["seed"] = seed
